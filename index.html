@@ -1,0 +1,2795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB Algo Bandit Optimizer</title>
+    <style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --bg-main: #080b11;
+    --bg-card: rgba(15, 22, 36, 0.7);
+    --bg-card-hover: rgba(22, 32, 54, 0.85);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color-hover: rgba(255, 255, 255, 0.16);
+    
+    --primary: #6366f1;
+    --primary-light: #818cf8;
+    --primary-glow: rgba(99, 102, 241, 0.15);
+    
+    --success: #10b981;
+    --success-light: #34d399;
+    --success-glow: rgba(16, 185, 129, 0.15);
+    
+    --danger: #ef4444;
+    --danger-light: #f87171;
+    --danger-glow: rgba(239, 68, 68, 0.15);
+    
+    --warning: #f59e0b;
+    --warning-glow: rgba(245, 158, 11, 0.15);
+    
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    
+    --font-header: 'Outfit', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+    
+    --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    padding: 2rem 1.5rem;
+    overflow-x: hidden;
+    background-image: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.24);
+}
+
+/* Container & Layout */
+.app-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.75rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+}
+
+.logo-section h1 {
+    font-family: var(--font-header);
+    font-size: 1.6rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffffff 30%, var(--primary-light) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.logo-section p {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* Glassmorphism Cards */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    transition: border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.card:hover {
+    border-color: var(--border-color-hover);
+}
+
+.card-title {
+    font-family: var(--font-header);
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    color: #ffffff;
+}
+
+.card-title span.subtitle {
+    font-size: 0.8rem;
+    font-family: var(--font-body);
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* Grid Layouts */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.6fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.analytics-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 900px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Stats Cards */
+.stat-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.25rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--primary);
+}
+
+.stat-card.success::before { background: var(--success); }
+.stat-card.danger::before { background: var(--danger); }
+.stat-card.warning::before { background: var(--warning); }
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-family: var(--font-header);
+    font-size: 2rem;
+    font-weight: 700;
+    margin-top: 0.5rem;
+    color: #ffffff;
+}
+
+.stat-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+/* Bandit Recommender Card */
+.recommendation-box {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(15, 22, 36, 0.8) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.recommendation-box::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.recommendation-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.recommendation-badge {
+    background: rgba(99, 102, 241, 0.2);
+    color: var(--primary-light);
+    padding: 0.25rem 0.6rem;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    text-transform: uppercase;
+}
+
+.recommendation-name {
+    font-family: var(--font-header);
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.5px;
+    text-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+}
+
+.recommendation-details {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.recommendation-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.rec-stat {
+    display: flex;
+    flex-direction: column;
+}
+
+.rec-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.rec-stat-value {
+    font-family: var(--font-header);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* Forms & Inputs */
+.form-group {
+    margin-bottom: 1.25rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    width: 100%;
+    background: rgba(10, 15, 26, 0.8);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: #ffffff;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    transition: all var(--transition-fast);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+/* Custom Select Container for Styling */
+.select-wrapper {
+    position: relative;
+}
+
+/* Custom Success/Failure Toggles */
+.outcome-preview {
+    margin-top: 1.25rem;
+    padding: 0.9rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.preview-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.preview-status.success { color: var(--success); }
+.preview-status.danger { color: var(--danger); }
+
+/* Switch Toggle Styling */
+.switch-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 22px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #374151;
+    transition: .3s;
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--success);
+}
+
+input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
+/* Buttons */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn:hover {
+    background: #3b82f6;
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%);
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-light) 0%, #5850ec 100%);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--text-secondary);
+}
+
+.btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger-light);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+    border-radius: 8px;
+}
+
+/* SVG Chart Elements */
+.chart-container {
+    width: 100%;
+    height: 260px;
+    position: relative;
+    margin-top: 0.5rem;
+}
+
+.svg-chart {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.chart-grid-line {
+    stroke: rgba(255, 255, 255, 0.04);
+    stroke-width: 1;
+}
+
+.chart-axis {
+    stroke: rgba(255, 255, 255, 0.15);
+    stroke-width: 1;
+}
+
+.chart-text {
+    fill: var(--text-secondary);
+    font-size: 10px;
+    font-family: var(--font-body);
+}
+
+.chart-line {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0px 2px 8px rgba(99, 102, 241, 0.3));
+}
+
+.chart-line-bg {
+    fill: url(#line-gradient);
+    opacity: 0.15;
+}
+
+.chart-point {
+    fill: var(--primary-light);
+    stroke: var(--bg-main);
+    stroke-width: 2;
+    r: 4;
+    cursor: pointer;
+    transition: r var(--transition-fast), fill var(--transition-fast);
+}
+
+.chart-point:hover {
+    r: 6;
+    fill: #ffffff;
+}
+
+/* Beta distribution curves */
+.beta-curve {
+    fill: none;
+    stroke-width: 2;
+    transition: stroke-width var(--transition-fast);
+}
+
+.beta-curve:hover {
+    stroke-width: 3.5;
+}
+
+.beta-fill {
+    opacity: 0.1;
+}
+
+/* Credible Intervals bar styling */
+.ci-bar-row {
+    margin-bottom: 0.9rem;
+}
+
+.ci-bar-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    margin-bottom: 0.3rem;
+}
+
+.ci-bar-track {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    position: relative;
+}
+
+.ci-bar-interval {
+    height: 100%;
+    background: rgba(99, 102, 241, 0.3);
+    border-radius: 4px;
+    position: absolute;
+    top: 0;
+}
+
+.ci-bar-mean {
+    width: 12px;
+    height: 12px;
+    background: var(--primary-light);
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    position: absolute;
+    top: -2px;
+    transform: translateX(-6px);
+    box-shadow: 0 0 6px var(--primary);
+}
+
+.ci-bar-row.recommended .ci-bar-interval {
+    background: rgba(16, 185, 129, 0.3);
+}
+
+.ci-bar-row.recommended .ci-bar-mean {
+    background: var(--success-light);
+    box-shadow: 0 0 6px var(--success);
+}
+
+/* Tables */
+.table-wrapper {
+    overflow-x: auto;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+th {
+    background: rgba(255, 255, 255, 0.02);
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover td {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+/* Badges */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-success {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--success-light);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-danger {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--danger-light);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-side-buy {
+    background: rgba(16, 185, 129, 0.08);
+    color: var(--success-light);
+}
+
+.badge-side-sell {
+    background: rgba(239, 68, 68, 0.08);
+    color: var(--danger-light);
+}
+
+/* Modals & Dialogs */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+}
+
+.modal-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color-hover);
+    border-radius: 16px;
+    padding: 1.75rem;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    transform: translateY(20px);
+    transition: transform var(--transition-normal);
+}
+
+.modal-overlay.active .modal {
+    transform: translateY(0);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.modal-title {
+    font-family: var(--font-header);
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.modal-close:hover {
+    color: #ffffff;
+}
+
+.modal-body {
+    margin-bottom: 1.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* Settings Drawer/Tabs styling */
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    padding-right: 0.5rem;
+}
+
+.settings-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.65rem 0.9rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.settings-item-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.add-algo-form {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Legend Styling */
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    justify-content: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+}
+
+/* Tooltip */
+.chart-tooltip {
+    position: absolute;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color-hover);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    z-index: 10;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+.chart-tooltip.active {
+    opacity: 1;
+}
+
+/* Export / Import Panel */
+.data-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.file-input-wrapper {
+    position: relative;
+    overflow: hidden;
+    display: inline-block;
+}
+
+.file-input-wrapper input[type=file] {
+    font-size: 100px;
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+/* Custom Alert Banner */
+.banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.9rem 1.25rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    margin-bottom: 1.25rem;
+    line-height: 1.4;
+}
+
+.banner-info {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    color: var(--primary-light);
+}
+
+.banner-warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+
+/* Pagination & Filtering Styling */
+.table-header-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filters-box {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.pagination {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.pagination-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: #ffffff;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    transition: all var(--transition-fast);
+}
+
+.pagination-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.pagination-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Tab Switching Layout */
+.tab-container {
+    display: flex;
+    gap: 0.25rem;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0.25rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.25rem;
+}
+
+.tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all var(--transition-fast);
+    text-align: center;
+}
+
+.tab-btn.active {
+    background: var(--bg-card);
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* Copy-paste area */
+.raw-data-textarea {
+    width: 100%;
+    height: 120px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+    font-size: 0.75rem;
+    resize: none;
+    margin-top: 0.75rem;
+}
+
+.raw-data-textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+</style>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎯</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header>
+            <div class="logo-section">
+                <h1>🎯 IB Algo Bandit Optimizer</h1>
+                <p>Quant decision engine for evaluating Interactive Brokers order-fill algorithms</p>
+            </div>
+            <div class="header-actions">
+                <button id="demo-data-btn" class="btn btn-secondary btn-sm" title="Load sample data to test charts">
+                    ⚡ Load Demo Data
+                </button>
+                <button id="export-csv-btn" class="btn btn-secondary btn-sm" title="Download all records as CSV">
+                    📤 Export CSV
+                </button>
+                <div class="file-input-wrapper">
+                    <button class="btn btn-secondary btn-sm">📥 Import CSV</button>
+                    <input type="file" id="csv-file-input" accept=".csv" title="Upload a trade log CSV">
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Bar -->
+        <div class="stats-grid">
+            <div class="card stat-card success">
+                <div class="stat-label">Overall Success Rate</div>
+                <div id="stat-overall-rate" class="stat-value">0.0%</div>
+                <div class="stat-desc">Fills meeting success threshold</div>
+            </div>
+            <div class="card stat-card">
+                <div class="stat-label">Total Trades Logged</div>
+                <div id="stat-total-trades" class="stat-value">0</div>
+                <div class="stat-desc">Across all active algorithms</div>
+            </div>
+            <div class="card stat-card warning">
+                <div class="stat-label">Active Choices (Arms)</div>
+                <div id="stat-active-choices" class="stat-value">0</div>
+                <div class="stat-desc">Algorithms currently in comparison</div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="tab-container">
+            <button class="tab-btn active" data-tab="tab-dashboard">📊 Optimizer Dashboard</button>
+            <button class="tab-btn" data-tab="tab-history">📋 Trade Logs</button>
+            <button class="tab-btn" data-tab="tab-settings">⚙️ Settings & Data</button>
+        </div>
+
+        <!-- Dynamic Demo Banner Placeholder -->
+        <div id="demo-banner-placeholder"></div>
+
+        <!-- TAB 1: DASHBOARD -->
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="main-grid">
+                
+                <!-- Left Side: Recommendation & Log Form -->
+                <div class="flex-col" style="display:flex; flex-direction:column; gap:1.5rem;">
+                    
+                    <!-- Recommendation Card -->
+                    <div class="recommendation-box">
+                        <div class="recommendation-header">
+                            <span class="stat-label">Next Trade Recommendation</span>
+                            <span id="rec-type" class="recommendation-badge">Exploitation</span>
+                        </div>
+                        <div id="rec-name" class="recommendation-name">Loading...</div>
+                        <p id="rec-desc" class="recommendation-details">
+                            Calculating optimal algorithm path...
+                        </p>
+                        
+                        <div class="recommendation-stats">
+                            <div class="rec-stat">
+                                <span class="rec-stat-label">Probability Best</span>
+                                <span id="rec-stat-prob-val" class="rec-stat-value">0%</span>
+                            </div>
+                            <div class="rec-stat">
+                                <span class="rec-stat-label">Expected Win Rate</span>
+                                <span id="rec-stat-rate-val" class="rec-stat-value">0.0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Log Trade Card -->
+                    <div class="card">
+                        <div class="card-title">
+                            Log a New Trade
+                            <span class="subtitle">Record order fill results</span>
+                        </div>
+                        
+                        <form id="log-trade-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="trade-ticker">Ticker Symbol *</label>
+                                    <input type="text" id="trade-ticker" placeholder="e.g. AAPL" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="trade-side">Trade Side</label>
+                                    <select id="trade-side">
+                                        <option value="Buy">Buy</option>
+                                        <option value="Sell">Sell</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="trade-qty">Order Qty (Shares)</label>
+                                    <input type="number" id="trade-qty" placeholder="100" min="1" value="100">
+                                </div>
+                                <div class="form-group">
+                                    <label for="trade-algo">IB Algorithm Used</label>
+                                    <select id="trade-algo">
+                                        <!-- Dynamically Populated -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label id="trade-benchmark-label" for="trade-benchmark">Opening Price ($) *</label>
+                                    <input type="number" id="trade-benchmark" placeholder="150.00" step="0.0001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="trade-fill">Avg Fill Price ($) *</label>
+                                    <input type="number" id="trade-fill" placeholder="149.85" step="0.0001" required>
+                                </div>
+                            </div>
+
+                            <!-- Live Outcome Preview -->
+                            <div class="outcome-preview">
+                                <div>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 2px;">Expected Success Outcome</span>
+                                    <div id="live-preview-status" class="preview-status">Pending Pricing Input</div>
+                                </div>
+                                <span id="current-criteria-info" style="font-size: 0.75rem; color: var(--text-muted); text-align: right; max-width: 55%;">
+                                    Criteria: Buy Fill &le; Benchmark
+                                </span>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="margin-top: 1.25rem;">
+                                ✍️ Log Trade & Update Bandit
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Right Side: Analytics Charts -->
+                <div class="flex-col" style="display:flex; flex-direction:column; gap:1.5rem;">
+                    
+                    <!-- Credible Intervals Bar Chart -->
+                    <div class="card">
+                        <div class="card-title">
+                            Expected Success Rates
+                            <span class="subtitle">95% Bayesian Credible Intervals (Error Bars)</span>
+                        </div>
+                        <div id="ci-chart-container" style="display: flex; flex-direction: column; gap: 0.25rem; min-height: 150px; justify-content: center;">
+                            <!-- Dynamically Drawn -->
+                        </div>
+                    </div>
+
+                    <div class="analytics-grid">
+                        
+                        <!-- Donut Chart -->
+                        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                            <div class="card-title">
+                                Probability of Being Best
+                                <span class="subtitle">Monte Carlo simulation share</span>
+                            </div>
+                            <div id="prob-chart-container" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; width: 100%;">
+                                <!-- Dynamically Drawn -->
+                            </div>
+                        </div>
+
+                        <!-- Historical Trend Line Chart -->
+                        <div class="card" style="position: relative;">
+                            <div class="card-title">
+                                Cumulative Performance
+                                <span class="subtitle">Success rate trend line over time</span>
+                            </div>
+                            <div id="history-chart-container" class="chart-container">
+                                <!-- Dynamically Drawn -->
+                            </div>
+                            <!-- Shared Chart Tooltip -->
+                            <div id="chart-tooltip" class="chart-tooltip"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: TRADE LOG HISTORY -->
+        <div id="tab-history" class="tab-content">
+            <div class="card">
+                <div class="card-title">
+                    Trade Execution Log
+                    <span class="subtitle">Complete history of logged comparisons</span>
+                </div>
+
+                <!-- Table Filters and Pagination Controls -->
+                <div class="table-header-controls">
+                    <div class="filters-box">
+                        <input type="text" id="filter-ticker" placeholder="Search Ticker" style="width: 130px; padding: 0.4rem 0.75rem; font-size: 0.8rem; border-radius: 8px;">
+                        
+                        <select id="filter-algo" style="width: 160px; padding: 0.4rem 0.75rem; font-size: 0.8rem; border-radius: 8px;">
+                            <option value="all">All Algorithms</option>
+                        </select>
+
+                        <select id="filter-side" style="width: 100px; padding: 0.4rem 0.75rem; font-size: 0.8rem; border-radius: 8px;">
+                            <option value="all">All Sides</option>
+                            <option value="Buy">Buy</option>
+                            <option value="Sell">Sell</option>
+                        </select>
+
+                        <select id="filter-result" style="width: 120px; padding: 0.4rem 0.75rem; font-size: 0.8rem; border-radius: 8px;">
+                            <option value="all">All Results</option>
+                            <option value="success">Success</option>
+                            <option value="failure">Failure</option>
+                        </select>
+                    </div>
+
+                    <div class="pagination">
+                        <button id="prev-page-btn" class="pagination-btn" disabled>&larr;</button>
+                        <span id="page-indicator">Page 1 of 1</span>
+                        <button id="next-page-btn" class="pagination-btn" disabled>&rarr;</button>
+                    </div>
+                </div>
+
+                <!-- Trades Table -->
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Ticker</th>
+                                <th>Side</th>
+                                <th>Qty</th>
+                                <th>Algorithm</th>
+                                <th>Benchmark</th>
+                                <th>Fill Price</th>
+                                <th>Slippage ($)</th>
+                                <th>Result</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trades-table-body">
+                            <!-- Dynamically Populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: SETTINGS & DATABASE -->
+        <div id="tab-settings" class="tab-content">
+            <div class="main-grid" style="grid-template-columns: 1fr 1fr;">
+                
+                <!-- Criteria Settings -->
+                <div class="card">
+                    <div class="card-title">
+                        Success Criteria Definitions
+                        <span class="subtitle">Change metrics and acceptable tolerances</span>
+                    </div>
+
+                    <form id="criteria-settings-form">
+                        <div class="form-group">
+                            <label for="settings-benchmark-type">Benchmark Metric Type</label>
+                            <select id="settings-benchmark-type">
+                                <option value="open">Opening Price</option>
+                                <option value="arrival">Arrival Price</option>
+                                <option value="vwap">Volume Weighted Average Price (VWAP)</option>
+                                <option value="custom">Custom Benchmark Price</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="settings-tolerance">Slippage Tolerance ($ per share)</label>
+                            <input type="number" id="settings-tolerance" step="0.0001" min="0" value="0.00">
+                            <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 4px;">
+                                Allow the fill price to be slightly worse than the benchmark. E.g. $0.02 tolerance means a buy order is a "Success" even if filled up to $0.02 above the benchmark.
+                            </span>
+                        </div>
+
+                        <div class="banner banner-info" style="margin-top: 1rem;">
+                            ℹ️ Criteria changes are applied immediately to all new trades. Re-saving also gives you the option to recalculate all historical trade results.
+                        </div>
+
+                        <button type="submit" class="btn" style="margin-top: 0.5rem; background: var(--primary);">
+                            💾 Save Criteria Settings
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Choices (Arms) Configuration -->
+                <div class="card">
+                    <div class="card-title">
+                        Active IB Algorithms (Bandit Arms)
+                        <span class="subtitle">Define the set of choices available</span>
+                    </div>
+
+                    <div id="settings-algo-list" class="settings-list">
+                        <!-- Dynamically Populated -->
+                    </div>
+
+                    <form id="add-algo-form" class="add-algo-form">
+                        <input type="text" id="new-algo-name" placeholder="e.g. Adaptive VWAP" required style="flex:1;">
+                        <button type="submit" class="btn" style="background: var(--success);">➕ Add Algo</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Database Backup and Clear -->
+            <div class="card" style="margin-top: 1.5rem;">
+                <div class="card-title">
+                    Database Administrator & Backups
+                    <span class="subtitle">Synchronize local data and clear history</span>
+                </div>
+                
+                <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5;">
+                    Your data is stored securely in your browser's local storage (`localStorage`). It never leaves your computer. If you clear your browser cache, you will lose your data. We recommend exporting to CSV regularly to keep a backup. You can copy the raw JSON database below to share or back up manually.
+                </p>
+
+                <div class="data-actions">
+                    <button id="reset-data-btn" class="btn btn-danger">
+                        🗑️ Reset All Local Data
+                    </button>
+                </div>
+
+                <label for="raw-json-data" style="margin-top: 1.5rem;">Raw JSON Database State</label>
+                <textarea id="raw-json-data" class="raw-data-textarea" readonly onclick="this.select()"></textarea>
+                <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; display: block;">
+                    Click text box to select all, copy, and save to a text file for a raw database backup.
+                </span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script>
+// IB Algo Bandit Optimizer - Core Logic
+
+// State Object
+const state = {
+    trades: [],
+    choices: [],
+    criteria: {
+        benchmarkType: 'open', // 'open', 'arrival', 'vwap', 'custom'
+        tolerance: 0.00, // in dollars (e.g. 0.05 is 5 cents)
+        slippageUnit: 'cents' // 'cents' or 'percent' or 'ticks' (we'll stick to absolute difference for simplicity, label as 'diff')
+    },
+    currentRecommendation: null,
+    pagination: {
+        currentPage: 1,
+        pageSize: 10
+    },
+    filters: {
+        algo: 'all',
+        ticker: '',
+        side: 'all',
+        result: 'all'
+    }
+};
+
+// Default Configurations
+const DEFAULT_CHOICES = [
+    'Adaptive Limit',
+    'VWAP',
+    'Arrival Price',
+    'TWAP',
+    'Accumulate/Distribute'
+];
+
+// --- STATISTICAL ENGINE (Thompson Sampling & Beta-Binomial) ---
+
+// Box-Muller transform for normal random numbers
+let nextNextGaussian = null;
+function randomNormal() {
+    if (nextNextGaussian !== null) {
+        const val = nextNextGaussian;
+        nextNextGaussian = null;
+        return val;
+    }
+    let u, v, w;
+    do {
+        u = 2 * Math.random() - 1;
+        v = 2 * Math.random() - 1;
+        w = u * u + v * v;
+    } while (w >= 1 || w === 0);
+    const c = Math.sqrt(-2 * Math.log(w) / w);
+    nextNextGaussian = v * c;
+    return u * c;
+}
+
+// Marsaglia and Tsang's method for Gamma(d, 1) where d >= 1
+function randomGamma(alpha) {
+    if (alpha < 1) {
+        return randomGamma(alpha + 1) * Math.pow(Math.random(), 1 / alpha);
+    }
+    const d = alpha - 1/3;
+    const c = 1 / Math.sqrt(9 * d);
+    while (true) {
+        let x, v, u;
+        do {
+            x = randomNormal();
+            v = 1 + c * x;
+        } while (v <= 0);
+        v = v * v * v;
+        u = Math.random();
+        if (u < 1 - 0.0331 * x * x * x * x) {
+            return d * v;
+        }
+        if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) {
+            return d * v;
+        }
+    }
+}
+
+// Beta sampler: Beta(alpha, beta) = Gamma(alpha) / (Gamma(alpha) + Gamma(beta))
+function randomBeta(alpha, beta) {
+    const x = randomGamma(alpha);
+    const y = randomGamma(beta);
+    if (x + y === 0) return 0.5;
+    return x / (x + y);
+}
+
+// Calculate the statistics for each active algorithm
+function calculateAlgoStats() {
+    const stats = {};
+    
+    // Initialize stats for all choices
+    state.choices.forEach(algo => {
+        stats[algo] = {
+            name: algo,
+            trades: 0,
+            successes: 0,
+            failures: 0,
+            alpha: 1, // Beta prior parameter alpha
+            beta: 1,  // Beta prior parameter beta
+            mean: 0.5,
+            ciLow: 0.0,
+            ciHigh: 1.0,
+            winCount: 0,
+            probBest: 0
+        };
+    });
+
+    // Populate counts based on historical trades
+    state.trades.forEach(trade => {
+        if (stats[trade.algo]) {
+            stats[trade.algo].trades++;
+            if (trade.success) {
+                stats[trade.algo].successes++;
+                stats[trade.algo].alpha++;
+            } else {
+                stats[trade.algo].failures++;
+                stats[trade.algo].beta++;
+            }
+        }
+    });
+
+    // Compute expected means & credible intervals (95%)
+    Object.keys(stats).forEach(algo => {
+        const s = stats[algo];
+        s.mean = s.alpha / (s.alpha + s.beta);
+        
+        // Compute 95% Credible Interval via Monte Carlo simulation for speed/accuracy
+        const samples = [];
+        for (let i = 0; i < 1000; i++) {
+            samples.push(randomBeta(s.alpha, s.beta));
+        }
+        samples.sort((a, b) => a - b);
+        s.ciLow = samples[25];  // 2.5th percentile
+        s.ciHigh = samples[975]; // 97.5th percentile
+    });
+
+    // Run Monte Carlo Simulation to calculate "Probability of being the Best"
+    const numSimulations = 2000;
+    const activeAlgos = Object.values(stats);
+    
+    if (activeAlgos.length > 0) {
+        for (let sim = 0; sim < numSimulations; sim++) {
+            let bestAlgo = null;
+            let maxVal = -1;
+            
+            activeAlgos.forEach(algo => {
+                // Sample from the algorithm's Beta distribution
+                const val = randomBeta(algo.alpha, algo.beta);
+                if (val > maxVal) {
+                    maxVal = val;
+                    bestAlgo = algo;
+                }
+            });
+            
+            if (bestAlgo) {
+                bestAlgo.winCount++;
+            }
+        }
+        
+        activeAlgos.forEach(algo => {
+            algo.probBest = algo.winCount / numSimulations;
+        });
+    }
+
+    return stats;
+}
+
+// Generate the recommendation for the next trade
+function generateRecommendation(stats) {
+    const activeAlgos = Object.values(stats);
+    if (activeAlgos.length === 0) return null;
+
+    // Run a single Thompson Sampling trial to select the recommended algorithm
+    let selectedAlgo = null;
+    let maxVal = -1;
+    
+    activeAlgos.forEach(algo => {
+        const val = randomBeta(algo.alpha, algo.beta);
+        if (val > maxVal) {
+            maxVal = val;
+            selectedAlgo = algo;
+        }
+    });
+
+    // Determine if this is an "Exploitation" or "Exploration" decision
+    const maxMeanAlgo = activeAlgos.reduce((max, a) => a.mean > max.mean ? a : max, activeAlgos[0]);
+    const isExploration = selectedAlgo.name !== maxMeanAlgo.name;
+    const type = isExploration ? 'Exploration' : 'Exploitation';
+    const explanation = isExploration 
+        ? `Exploring "${selectedAlgo.name}" to gather more data and reduce uncertainty.`
+        : `Exploiting "${selectedAlgo.name}" because it currently has the highest expected success rate.`;
+
+    return {
+        name: selectedAlgo.name,
+        type: type,
+        explanation: explanation,
+        stats: selectedAlgo
+    };
+}
+
+// --- UTILITY FUNCTIONS ---
+
+// Automatically evaluate success based on criteria
+function evaluateSuccess(side, fillPrice, benchmarkPrice, tolerance) {
+    if (isNaN(fillPrice) || isNaN(benchmarkPrice)) return false;
+    
+    // Convert inputs to numbers
+    const fill = parseFloat(fillPrice);
+    const benchmark = parseFloat(benchmarkPrice);
+    const tol = parseFloat(tolerance) || 0.0;
+    
+    if (side.toLowerCase() === 'buy') {
+        // Buy success: fill price is cheaper than or equal to benchmark + tolerance
+        return fill <= (benchmark + tol);
+    } else {
+        // Sell success: fill price is more expensive than or equal to benchmark - tolerance
+        return fill >= (benchmark - tol);
+    }
+}
+
+// Calculate slippage
+function calculateSlippage(side, fillPrice, benchmarkPrice) {
+    if (isNaN(fillPrice) || isNaN(benchmarkPrice)) return 0;
+    const fill = parseFloat(fillPrice);
+    const benchmark = parseFloat(benchmarkPrice);
+    
+    // In trading, positive slippage is bad, negative slippage is good.
+    // Let's define slippage = Fill Price - Benchmark Price for Buy
+    // and Benchmark Price - Fill Price for Sell.
+    if (side.toLowerCase() === 'buy') {
+        return fill - benchmark;
+    } else {
+        return benchmark - fill;
+    }
+}
+
+// --- SAFE STORAGE MANAGER ---
+
+const safeStorage = {
+    getItem(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (e) {
+            console.warn("Storage read blocked:", e);
+            return null;
+        }
+    },
+    setItem(key, value) {
+        try {
+            localStorage.setItem(key, value);
+        } catch (e) {
+            console.warn("Storage write blocked:", e);
+        }
+    },
+    clear() {
+        try {
+            localStorage.clear();
+        } catch (e) {
+            console.warn("Storage clear blocked:", e);
+        }
+    }
+};
+
+function saveToLocalStorage() {
+    safeStorage.setItem('ib_bandit_trades', JSON.stringify(state.trades));
+    safeStorage.setItem('ib_bandit_choices', JSON.stringify(state.choices));
+    safeStorage.setItem('ib_bandit_criteria', JSON.stringify(state.criteria));
+}
+
+function loadFromLocalStorage() {
+    const storedTrades = safeStorage.getItem('ib_bandit_trades');
+    const storedChoices = safeStorage.getItem('ib_bandit_choices');
+    const storedCriteria = safeStorage.getItem('ib_bandit_criteria');
+
+    state.trades = storedTrades ? JSON.parse(storedTrades) : [];
+    state.choices = storedChoices ? JSON.parse(storedChoices) : [...DEFAULT_CHOICES];
+    state.criteria = storedCriteria ? JSON.parse(storedCriteria) : {
+        benchmarkType: 'open',
+        tolerance: 0.00
+    };
+}
+
+// --- DEMO DATA GENERATOR ---
+function loadDemoData() {
+    const tickers = ['AAPL', 'MSFT', 'NVDA', 'TSLA', 'AMZN', 'GOOGL', 'SPY', 'QQQ'];
+    const algos = state.choices;
+    
+    // Let's create about 60 mock trades spread over the last 30 days
+    const mockTrades = [];
+    const now = new Date();
+    
+    // Assign varying underlying "real" success rates to algorithms for the demo:
+    // Adaptive: 75%
+    // VWAP: 65%
+    // Arrival: 55%
+    // TWAP: 48%
+    // Acc/Dist: 40%
+    const trueRates = {
+        'Adaptive Limit': 0.75,
+        'VWAP': 0.65,
+        'Arrival Price': 0.55,
+        'TWAP': 0.48,
+        'Accumulate/Distribute': 0.40
+    };
+
+    for (let i = 60; i >= 1; i--) {
+        const tradeDate = new Date(now.getTime() - i * 12 * 60 * 60 * 1000); // twice a day
+        const ticker = tickers[Math.floor(Math.random() * tickers.length)];
+        const side = Math.random() > 0.5 ? 'Buy' : 'Sell';
+        const qty = Math.floor(Math.random() * 5 + 1) * 100;
+        const algo = algos[Math.floor(Math.random() * algos.length)];
+        
+        // Standard baseline prices
+        const basePrice = Math.floor(Math.random() * 200 + 50);
+        const benchmarkPrice = parseFloat((basePrice + Math.random() - 0.5).toFixed(2));
+        
+        // Success probability based on our assigned true rates (fallback to 0.5 if not found)
+        const successProb = trueRates[algo] !== undefined ? trueRates[algo] : 0.5;
+        const isSuccess = Math.random() < successProb;
+        
+        let fillPrice;
+        if (side === 'Buy') {
+            if (isSuccess) {
+                // Fill is lower than benchmark
+                fillPrice = parseFloat((benchmarkPrice - Math.random() * 0.4).toFixed(2));
+            } else {
+                // Fill is higher than benchmark
+                fillPrice = parseFloat((benchmarkPrice + Math.random() * 0.5 + 0.01).toFixed(2));
+            }
+        } else {
+            if (isSuccess) {
+                // Fill is higher than benchmark
+                fillPrice = parseFloat((benchmarkPrice + Math.random() * 0.4).toFixed(2));
+            } else {
+                // Fill is lower than benchmark
+                fillPrice = parseFloat((benchmarkPrice - Math.random() * 0.5 - 0.01).toFixed(2));
+            }
+        }
+
+        mockTrades.push({
+            id: 'demo_' + Math.random().toString(36).substr(2, 9),
+            timestamp: tradeDate.toISOString(),
+            ticker: ticker,
+            side: side,
+            qty: qty,
+            benchmarkPrice: benchmarkPrice,
+            fillPrice: fillPrice,
+            success: isSuccess,
+            algo: algo
+        });
+    }
+
+    state.trades = mockTrades;
+    saveToLocalStorage();
+    initApp();
+}
+
+// --- CSV IMPORT / EXPORT LOGIC ---
+
+// Helper to escape CSV fields
+function escapeCSV(val) {
+    if (val === undefined || val === null) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+}
+
+function exportToCSV() {
+    if (state.trades.length === 0) {
+        alert("No trades logged yet to export.");
+        return;
+    }
+
+    const headers = ['Date', 'Ticker', 'Side', 'Qty', 'Algo', 'Benchmark Price', 'Fill Price', 'Slippage', 'Success'];
+    const csvRows = [headers.join(',')];
+
+    state.trades.forEach(t => {
+        const dateStr = new Date(t.timestamp).toLocaleString();
+        const slippage = calculateSlippage(t.side, t.fillPrice, t.benchmarkPrice).toFixed(4);
+        const successStr = t.success ? 'Success' : 'Failure';
+        
+        const row = [
+            escapeCSV(dateStr),
+            escapeCSV(t.ticker),
+            escapeCSV(t.side),
+            escapeCSV(t.qty),
+            escapeCSV(t.algo),
+            escapeCSV(t.benchmarkPrice),
+            escapeCSV(t.fillPrice),
+            escapeCSV(slippage),
+            escapeCSV(successStr)
+        ];
+        csvRows.push(row.join(','));
+    });
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `ib_algo_trades_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function importFromCSV(fileContent, mode = 'merge') {
+    try {
+        const lines = fileContent.split(/\r\n|\n/);
+        if (lines.length < 2) throw new Error("File is empty or contains no trade data.");
+
+        // Parse header
+        const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+        const dateIdx = headers.indexOf('date');
+        const tickerIdx = headers.indexOf('ticker');
+        const sideIdx = headers.indexOf('side');
+        const qtyIdx = headers.indexOf('qty');
+        const algoIdx = headers.indexOf('algo');
+        const benchIdx = headers.indexOf('benchmark price');
+        const fillIdx = headers.indexOf('fill price');
+        
+        if (dateIdx === -1 || tickerIdx === -1 || sideIdx === -1 || algoIdx === -1 || benchIdx === -1 || fillIdx === -1) {
+            throw new Error("Missing required columns. Required: Date, Ticker, Side, Algo, Benchmark Price, Fill Price");
+        }
+
+        const newTrades = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            // Simple CSV line parser split by comma (doesn't handle nested comma quotes perfectly, but sufficient here)
+            // Splitting using regex that respects double quotes:
+            const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
+            const cleanFields = matches.map(f => f.trim().replace(/^["']|["']$/g, '').replace(/""/g, '"'));
+
+            if (cleanFields.length < Math.max(dateIdx, tickerIdx, sideIdx, algoIdx, benchIdx, fillIdx) + 1) {
+                console.warn(`Skipping malformed CSV line ${i + 1}: ${line}`);
+                continue;
+            }
+
+            const ticker = cleanFields[tickerIdx].toUpperCase();
+            let side = cleanFields[sideIdx];
+            side = side.charAt(0).toUpperCase() + side.slice(1).toLowerCase(); // Normalize Buy/Sell
+            
+            if (side !== 'Buy' && side !== 'Sell') {
+                console.warn(`Invalid Side value "${side}" on line ${i + 1}. Expected "Buy" or "Sell". Skipping.`);
+                continue;
+            }
+
+            const qty = qtyIdx !== -1 ? parseInt(cleanFields[qtyIdx]) || 100 : 100;
+            const algo = cleanFields[algoIdx];
+            const benchmarkPrice = parseFloat(cleanFields[benchIdx]);
+            const fillPrice = parseFloat(cleanFields[fillIdx]);
+            
+            if (isNaN(benchmarkPrice) || isNaN(fillPrice)) {
+                console.warn(`Invalid pricing values on line ${i + 1}. Skipping.`);
+                continue;
+            }
+
+            // Parse timestamp
+            let timestamp = new Date(cleanFields[dateIdx]).toISOString();
+            if (timestamp === "Invalid Date") {
+                timestamp = new Date().toISOString(); // Fallback to now
+            }
+
+            // Automatically evaluate success if not defined or re-verify
+            const success = evaluateSuccess(side, fillPrice, benchmarkPrice, state.criteria.tolerance);
+
+            newTrades.push({
+                id: 'csv_' + Math.random().toString(36).substr(2, 9) + '_' + i,
+                timestamp,
+                ticker,
+                side,
+                qty,
+                algo,
+                benchmarkPrice,
+                fillPrice,
+                success
+            });
+            
+            // Add imported algo to choices if not already present
+            if (!state.choices.includes(algo) && algo) {
+                state.choices.push(algo);
+            }
+        }
+
+        if (newTrades.length === 0) {
+            alert("No valid trade records were found in the CSV file.");
+            return;
+        }
+
+        if (mode === 'replace') {
+            state.trades = newTrades;
+        } else {
+            // Merge: avoid duplicates based on exact same timestamp, ticker, side, and algo
+            const existingKeys = new Set(state.trades.map(t => `${t.timestamp}_${t.ticker}_${t.side}_${t.algo}`));
+            const mergedCountBefore = state.trades.length;
+            
+            newTrades.forEach(t => {
+                const key = `${t.timestamp}_${t.ticker}_${t.side}_${t.algo}`;
+                if (!existingKeys.has(key)) {
+                    state.trades.push(t);
+                }
+            });
+            
+            const addedCount = state.trades.length - mergedCountBefore;
+            alert(`Successfully imported ${addedCount} new trades (skipped ${newTrades.length - addedCount} duplicates).`);
+        }
+
+        saveToLocalStorage();
+        initApp();
+        
+    } catch (err) {
+        alert("Error parsing CSV: " + err.message);
+    }
+}
+
+// Recalculate successes for all trades based on current tolerance & criteria
+function recalculateAllTrades() {
+    state.trades.forEach(t => {
+        t.success = evaluateSuccess(t.side, t.fillPrice, t.benchmarkPrice, state.criteria.tolerance);
+    });
+    saveToLocalStorage();
+    initApp();
+}
+
+
+// --- NATIVE SVG CHART DRAWING ---
+
+function drawCredibleIntervalsChart(stats) {
+    const container = document.getElementById('ci-chart-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const activeAlgos = Object.values(stats);
+    if (activeAlgos.length === 0) {
+        container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:0.9rem;">No active algorithms.</div>`;
+        return;
+    }
+
+    const currentRecName = state.currentRecommendation ? state.currentRecommendation.name : '';
+
+    activeAlgos.forEach(algo => {
+        const meanPercent = (algo.mean * 100).toFixed(1);
+        const lowPercent = (algo.ciLow * 100).toFixed(0);
+        const highPercent = (algo.ciHigh * 100).toFixed(0);
+        const isRec = algo.name === currentRecName;
+        
+        const row = document.createElement('div');
+        row.className = `ci-bar-row ${isRec ? 'recommended' : ''}`;
+        
+        const label = document.createElement('div');
+        label.className = 'ci-bar-label';
+        
+        const algoNameSpan = document.createElement('span');
+        algoNameSpan.style.fontWeight = isRec ? '600' : '400';
+        algoNameSpan.innerHTML = `${algo.name} ${isRec ? '<span style="color:var(--success-light);font-size:0.75rem;margin-left:4px;">(Rec)</span>' : ''}`;
+        
+        const statsSpan = document.createElement('span');
+        statsSpan.style.fontFamily = 'monospace';
+        statsSpan.style.color = isRec ? 'var(--text-primary)' : 'var(--text-secondary)';
+        statsSpan.textContent = `${algo.successes}/${algo.trades} | ${meanPercent}% [${lowPercent}%-${highPercent}%]`;
+        
+        label.appendChild(algoNameSpan);
+        label.appendChild(statsSpan);
+        
+        const track = document.createElement('div');
+        track.className = 'ci-bar-track';
+        
+        const interval = document.createElement('div');
+        interval.className = 'ci-bar-interval';
+        interval.style.left = `${algo.ciLow * 100}%`;
+        interval.style.width = `${(algo.ciHigh - algo.ciLow) * 100}%`;
+        
+        const meanNode = document.createElement('div');
+        meanNode.className = 'ci-bar-mean';
+        meanNode.style.left = `${algo.mean * 100}%`;
+        meanNode.title = `Expected: ${meanPercent}%`;
+        
+        track.appendChild(interval);
+        track.appendChild(meanNode);
+        
+        row.appendChild(label);
+        row.appendChild(track);
+        
+        container.appendChild(row);
+    });
+}
+
+function drawProbabilityBestChart(stats) {
+    const container = document.getElementById('prob-chart-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const activeAlgos = Object.values(stats);
+    if (activeAlgos.length === 0 || state.trades.length === 0) {
+        container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:0.9rem;">Log trades to see probability rankings.</div>`;
+        return;
+    }
+
+    // Sort algorithms by probability of being the best descending
+    const sortedAlgos = [...activeAlgos].sort((a, b) => b.probBest - a.probBest);
+
+    // Color palette for segments
+    const colors = [
+        '#6366f1', // Indigo
+        '#10b981', // Emerald
+        '#f59e0b', // Amber
+        '#ef4444', // Red
+        '#ec4899', // Pink
+        '#06b6d4', // Cyan
+        '#8b5cf6'  // Purple
+    ];
+
+    const svgNs = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNs, "svg");
+    svg.setAttribute("class", "svg-chart");
+    svg.setAttribute("viewBox", "0 0 200 200");
+    svg.style.maxHeight = "180px";
+    
+    // Draw concentric ring or donut slices
+    let accumulatedAngle = 0;
+    const centerX = 100;
+    const centerY = 100;
+    const radius = 65;
+    const strokeWidth = 16;
+    
+    const legend = document.createElement('div');
+    legend.className = 'chart-legend';
+
+    sortedAlgos.forEach((algo, idx) => {
+        const percentage = algo.probBest;
+        const color = colors[idx % colors.length];
+        
+        if (percentage > 0) {
+            const angleSize = percentage * 360;
+            const startAngle = accumulatedAngle;
+            const endAngle = accumulatedAngle + angleSize;
+            accumulatedAngle = endAngle;
+
+            // Generate polar coordinates for SVG Arc
+            const radStart = (startAngle - 90) * Math.PI / 180;
+            const radEnd = (endAngle - 90) * Math.PI / 180;
+            
+            const x1 = centerX + radius * Math.cos(radStart);
+            const y1 = centerY + radius * Math.sin(radStart);
+            const x2 = centerX + radius * Math.cos(radEnd);
+            const y2 = centerY + radius * Math.sin(radEnd);
+            
+            const largeArcFlag = angleSize > 180 ? 1 : 0;
+            
+            // If it is a full 360 degree circle
+            let pathD = "";
+            if (percentage >= 0.999) {
+                pathD = `M ${centerX} ${centerY - radius} A ${radius} ${radius} 0 1 1 ${centerX - 0.01} ${centerY - radius}`;
+            } else {
+                pathD = `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`;
+            }
+
+            const path = document.createElementNS(svgNs, "path");
+            path.setAttribute("d", pathD);
+            path.setAttribute("fill", "none");
+            path.setAttribute("stroke", color);
+            path.setAttribute("stroke-width", strokeWidth);
+            
+            // Subtle separation gap between slices if multiple slices
+            if (sortedAlgos.filter(a => a.probBest > 0).length > 1 && percentage < 0.999) {
+                path.setAttribute("stroke-linecap", "round");
+            }
+            
+            // Dynamic hover glow
+            path.style.transition = "stroke-width 0.2s ease, filter 0.2s ease";
+            path.style.cursor = "pointer";
+            path.addEventListener('mouseenter', () => {
+                path.setAttribute("stroke-width", strokeWidth + 4);
+                path.setAttribute("filter", `drop-shadow(0px 0px 4px ${color})`);
+            });
+            path.addEventListener('mouseleave', () => {
+                path.setAttribute("stroke-width", strokeWidth);
+                path.style.filter = "none";
+            });
+
+            svg.appendChild(path);
+        }
+        
+        // Add legend item
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        
+        const colorIndicator = document.createElement('div');
+        colorIndicator.className = 'legend-color';
+        colorIndicator.style.backgroundColor = color;
+        
+        const labelText = document.createElement('span');
+        labelText.innerHTML = `<span style="font-weight:600;color:#fff">${(algo.probBest * 100).toFixed(0)}%</span> ${algo.name}`;
+        
+        legendItem.appendChild(colorIndicator);
+        legendItem.appendChild(labelText);
+        legend.appendChild(legendItem);
+    });
+    
+    // Add centered text in the donut hole
+    const textNode = document.createElementNS(svgNs, "text");
+    textNode.setAttribute("x", "100");
+    textNode.setAttribute("y", "98");
+    textNode.setAttribute("text-anchor", "middle");
+    textNode.setAttribute("fill", "#ffffff");
+    textNode.setAttribute("font-size", "11px");
+    textNode.setAttribute("font-family", "var(--font-header)");
+    textNode.setAttribute("font-weight", "700");
+    textNode.textContent = "PROBABILITY";
+
+    const subTextNode = document.createElementNS(svgNs, "text");
+    subTextNode.setAttribute("x", "100");
+    subTextNode.setAttribute("y", "114");
+    subTextNode.setAttribute("text-anchor", "middle");
+    subTextNode.setAttribute("fill", "var(--text-secondary)");
+    subTextNode.setAttribute("font-size", "10px");
+    subTextNode.setAttribute("font-family", "var(--font-body)");
+    subTextNode.textContent = "OF BEING BEST";
+    
+    svg.appendChild(textNode);
+    svg.appendChild(subTextNode);
+
+    container.appendChild(svg);
+    container.appendChild(legend);
+}
+
+function drawSuccessRateOverTimeChart() {
+    const container = document.getElementById('history-chart-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (state.trades.length < 3) {
+        container.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-size:0.9rem;">Log at least 3 trades to see historical trend lines.</div>`;
+        return;
+    }
+
+    // Sort trades chronologically
+    const sortedTrades = [...state.trades].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    // Calculate rolling success rate
+    let successCount = 0;
+    const historyPoints = sortedTrades.map((t, idx) => {
+        if (t.success) successCount++;
+        return {
+            x: idx + 1,
+            y: successCount / (idx + 1)
+        };
+    });
+
+    const svgNs = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(svgNs, "svg");
+    svg.setAttribute("class", "svg-chart");
+    svg.setAttribute("viewBox", "0 0 500 240");
+    
+    const width = 500;
+    const height = 240;
+    const paddingLeft = 40;
+    const paddingRight = 20;
+    const paddingTop = 20;
+    const paddingBottom = 30;
+
+    const graphWidth = width - paddingLeft - paddingRight;
+    const graphHeight = height - paddingTop - paddingBottom;
+
+    const minX = 1;
+    const maxX = historyPoints.length;
+    
+    // Bounds for Success Rate are 0 to 100%
+    const minY = 0.0;
+    const maxY = 1.0;
+
+    // Helper to map values to coordinates
+    const getXCoord = (x) => paddingLeft + ((x - minX) / (maxX - minX || 1)) * graphWidth;
+    const getYCoord = (y) => paddingTop + graphHeight - ((y - minY) / (maxY - minY)) * graphHeight;
+
+    // Draw Grid and Axes
+    for (let r = 0; r <= 4; r++) {
+        const yVal = r * 0.25;
+        const yCoord = getYCoord(yVal);
+        
+        // Grid lines
+        const grid = document.createElementNS(svgNs, "line");
+        grid.setAttribute("x1", paddingLeft);
+        grid.setAttribute("y1", yCoord);
+        grid.setAttribute("x2", width - paddingRight);
+        grid.setAttribute("y2", yCoord);
+        grid.setAttribute("class", "chart-grid-line");
+        svg.appendChild(grid);
+
+        // Y Labels
+        const text = document.createElementNS(svgNs, "text");
+        text.setAttribute("x", paddingLeft - 10);
+        text.setAttribute("y", yCoord + 3);
+        text.setAttribute("text-anchor", "end");
+        text.setAttribute("class", "chart-text");
+        text.textContent = `${(yVal * 100).toFixed(0)}%`;
+        svg.appendChild(text);
+    }
+
+    // X Axis Labels (divide trades into 4 intervals)
+    const xInterval = Math.max(1, Math.floor(maxX / 4));
+    for (let i = 0; i < maxX; i += xInterval) {
+        const pt = historyPoints[i];
+        const xCoord = getXCoord(pt.x);
+        
+        const line = document.createElementNS(svgNs, "line");
+        line.setAttribute("x1", xCoord);
+        line.setAttribute("y1", height - paddingBottom);
+        line.setAttribute("x2", xCoord);
+        line.setAttribute("y2", height - paddingBottom + 5);
+        line.setAttribute("stroke", "rgba(255, 255, 255, 0.15)");
+        svg.appendChild(line);
+
+        const text = document.createElementNS(svgNs, "text");
+        text.setAttribute("x", xCoord);
+        text.setAttribute("y", height - paddingBottom + 18);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("class", "chart-text");
+        text.textContent = `T#${pt.x}`;
+        svg.appendChild(text);
+    }
+    
+    // Add linear gradients for area under line
+    const defs = document.createElementNS(svgNs, "defs");
+    const linearGradient = document.createElementNS(svgNs, "linearGradient");
+    linearGradient.setAttribute("id", "line-gradient");
+    linearGradient.setAttribute("x1", "0%");
+    linearGradient.setAttribute("y1", "0%");
+    linearGradient.setAttribute("x2", "0%");
+    linearGradient.setAttribute("y2", "100%");
+    
+    const stop1 = document.createElementNS(svgNs, "stop");
+    stop1.setAttribute("offset", "0%");
+    stop1.setAttribute("stop-color", "var(--primary)");
+    stop1.setAttribute("stop-opacity", "0.25");
+    
+    const stop2 = document.createElementNS(svgNs, "stop");
+    stop2.setAttribute("offset", "100%");
+    stop2.setAttribute("stop-color", "var(--primary)");
+    stop2.setAttribute("stop-opacity", "0.0");
+    
+    linearGradient.appendChild(stop1);
+    linearGradient.appendChild(stop2);
+    defs.appendChild(linearGradient);
+    svg.appendChild(defs);
+
+    // Build the SVG path
+    let pathD = `M ${getXCoord(historyPoints[0].x)} ${getYCoord(historyPoints[0].y)}`;
+    let bgPathD = `M ${getXCoord(historyPoints[0].x)} ${getYCoord(0)} L ${getXCoord(historyPoints[0].x)} ${getYCoord(historyPoints[0].y)}`;
+    
+    for (let i = 1; i < historyPoints.length; i++) {
+        const pt = historyPoints[i];
+        pathD += ` L ${getXCoord(pt.x)} ${getYCoord(pt.y)}`;
+        bgPathD += ` L ${getXCoord(pt.x)} ${getYCoord(pt.y)}`;
+    }
+    
+    bgPathD += ` L ${getXCoord(historyPoints[historyPoints.length - 1].x)} ${getYCoord(0)} Z`;
+
+    // Render Area Background
+    const bgPath = document.createElementNS(svgNs, "path");
+    bgPath.setAttribute("d", bgPathD);
+    bgPath.setAttribute("class", "chart-line-bg");
+    svg.appendChild(bgPath);
+
+    // Render Line Path
+    const path = document.createElementNS(svgNs, "path");
+    path.setAttribute("d", pathD);
+    path.setAttribute("class", "chart-line");
+    svg.appendChild(path);
+
+    // Render interactive dots
+    const tooltip = document.getElementById('chart-tooltip');
+    
+    historyPoints.forEach((pt, i) => {
+        // Draw dots only for every 2nd or 3rd point if trades dataset gets very large to prevent overlap
+        if (historyPoints.length > 25 && i % Math.floor(historyPoints.length / 12) !== 0 && i !== historyPoints.length - 1) {
+            return;
+        }
+
+        const dot = document.createElementNS(svgNs, "circle");
+        dot.setAttribute("cx", getXCoord(pt.x));
+        dot.setAttribute("cy", getYCoord(pt.y));
+        dot.setAttribute("class", "chart-point");
+        
+        dot.addEventListener('mouseenter', (e) => {
+            const trade = sortedTrades[i];
+            const dateStr = new Date(trade.timestamp).toLocaleDateString();
+            
+            tooltip.innerHTML = `
+                <div style="font-weight:600;margin-bottom:2px;">Trade #${pt.x} (${trade.ticker})</div>
+                <div>Algo: ${trade.algo}</div>
+                <div>Slippage: <span style="color:${trade.success ? 'var(--success-light)' : 'var(--danger-light)'}">${calculateSlippage(trade.side, trade.fillPrice, trade.benchmarkPrice).toFixed(2)}</span></div>
+                <div>Success Rate: <span style="font-weight:600">${(pt.y * 100).toFixed(1)}%</span></div>
+                <div style="font-size:9px;color:var(--text-muted);margin-top:2px;">${dateStr}</div>
+            `;
+            
+            const bounds = container.getBoundingClientRect();
+            tooltip.style.left = `${getXCoord(pt.x) + 10}px`;
+            tooltip.style.top = `${getYCoord(pt.y) - 15}px`;
+            tooltip.classList.add('active');
+        });
+
+        dot.addEventListener('mouseleave', () => {
+            tooltip.classList.remove('active');
+        });
+
+        svg.appendChild(dot);
+    });
+
+    container.appendChild(svg);
+}
+
+
+// --- VIEW RENDERING & UI SYNC ---
+
+function updateDashboardStats(stats) {
+    const totalTradesVal = state.trades.length;
+    const successesVal = state.trades.filter(t => t.success).length;
+    const successRateVal = totalTradesVal > 0 ? (successesVal / totalTradesVal * 100).toFixed(1) : '0.0';
+
+    document.getElementById('stat-total-trades').textContent = totalTradesVal;
+    document.getElementById('stat-overall-rate').textContent = `${successRateVal}%`;
+    document.getElementById('stat-active-choices').textContent = state.choices.length;
+
+    // Recalculate and display recommendation card details
+    state.currentRecommendation = generateRecommendation(stats);
+    
+    const recNameNode = document.getElementById('rec-name');
+    const recTypeNode = document.getElementById('rec-type');
+    const recDescNode = document.getElementById('rec-desc');
+    const recProbValNode = document.getElementById('rec-stat-prob-val');
+    const recRateValNode = document.getElementById('rec-stat-rate-val');
+
+    if (state.currentRecommendation) {
+        recNameNode.textContent = state.currentRecommendation.name;
+        recTypeNode.textContent = state.currentRecommendation.type;
+        recTypeNode.className = `recommendation-badge ${state.currentRecommendation.type === 'Exploration' ? 'warning' : ''}`;
+        
+        // Custom warning color for exploration badge in CSS is set using standard selector
+        if (state.currentRecommendation.type === 'Exploration') {
+            recTypeNode.style.background = 'var(--warning-glow)';
+            recTypeNode.style.color = 'var(--warning)';
+            recTypeNode.style.borderColor = 'rgba(245,158,11,0.3)';
+        } else {
+            recTypeNode.style.background = 'rgba(99, 102, 241, 0.2)';
+            recTypeNode.style.color = 'var(--primary-light)';
+            recTypeNode.style.borderColor = 'rgba(99, 102, 241, 0.3)';
+        }
+        
+        recDescNode.textContent = state.currentRecommendation.explanation;
+        recProbValNode.textContent = `${(state.currentRecommendation.stats.probBest * 100).toFixed(0)}%`;
+        recRateValNode.textContent = `${(state.currentRecommendation.stats.mean * 100).toFixed(1)}%`;
+        
+        // Auto fill dropdown recommendation selection option
+        const algoDropdown = document.getElementById('trade-algo');
+        if (algoDropdown) {
+            // Find option matches recommendation and select it initially
+            for (let i = 0; i < algoDropdown.options.length; i++) {
+                if (algoDropdown.options[i].value === state.currentRecommendation.name) {
+                    algoDropdown.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    } else {
+        recNameNode.textContent = 'None Available';
+        recTypeNode.textContent = 'N/A';
+        recDescNode.textContent = 'Add some algorithms in settings to start getting optimizer recommendations.';
+        recProbValNode.textContent = '0%';
+        recRateValNode.textContent = '0%';
+    }
+}
+
+function renderTradesTable() {
+    const tbody = document.getElementById('trades-table-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    // Filter trades
+    let filteredTrades = [...state.trades];
+
+    if (state.filters.algo !== 'all') {
+        filteredTrades = filteredTrades.filter(t => t.algo === state.filters.algo);
+    }
+    if (state.filters.ticker.trim() !== '') {
+        const term = state.filters.ticker.trim().toUpperCase();
+        filteredTrades = filteredTrades.filter(t => t.ticker.includes(term));
+    }
+    if (state.filters.side !== 'all') {
+        filteredTrades = filteredTrades.filter(t => t.side === state.filters.side);
+    }
+    if (state.filters.result !== 'all') {
+        const successTarget = state.filters.result === 'success';
+        filteredTrades = filteredTrades.filter(t => t.success === successTarget);
+    }
+
+    // Sort chronologically reverse (newest first)
+    filteredTrades.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // Handle Pagination
+    const totalCount = filteredTrades.length;
+    const totalPages = Math.ceil(totalCount / state.pagination.pageSize) || 1;
+    
+    // Boundary check
+    if (state.pagination.currentPage > totalPages) {
+        state.pagination.currentPage = totalPages;
+    }
+    
+    const startIndex = (state.pagination.currentPage - 1) * state.pagination.pageSize;
+    const endIndex = Math.min(startIndex + state.pagination.pageSize, totalCount);
+    
+    const paginatedTrades = filteredTrades.slice(startIndex, endIndex);
+
+    // Sync UI elements for page counting
+    document.getElementById('page-indicator').textContent = `Page ${state.pagination.currentPage} of ${totalPages} (${totalCount} trades)`;
+    document.getElementById('prev-page-btn').disabled = state.pagination.currentPage === 1;
+    document.getElementById('next-page-btn').disabled = state.pagination.currentPage === totalPages;
+
+    if (paginatedTrades.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:2rem;">No trades match current filters.</td></tr>`;
+        return;
+    }
+
+    paginatedTrades.forEach(t => {
+        const tr = document.createElement('tr');
+        const slippage = calculateSlippage(t.side, t.fillPrice, t.benchmarkPrice);
+        const dateStr = new Date(t.timestamp).toLocaleDateString();
+        
+        tr.innerHTML = `
+            <td>${dateStr}</td>
+            <td><span style="font-weight:600">${t.ticker}</span></td>
+            <td><span class="badge ${t.side === 'Buy' ? 'badge-side-buy' : 'badge-side-sell'}">${t.side}</span></td>
+            <td>${t.qty}</td>
+            <td>${t.algo}</td>
+            <td style="font-family:monospace">$${parseFloat(t.benchmarkPrice).toFixed(2)}</td>
+            <td style="font-family:monospace">$${parseFloat(t.fillPrice).toFixed(2)}</td>
+            <td style="font-family:monospace;color:${t.success ? 'var(--success-light)' : 'var(--danger-light)'}">
+                ${slippage >= 0 ? '+' : ''}${slippage.toFixed(2)}
+            </td>
+            <td>
+                <span class="badge ${t.success ? 'badge-success' : 'badge-danger'}">
+                    ${t.success ? 'Success' : 'Failure'}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-secondary btn-sm btn-danger" onclick="deleteTrade('${t.id}')" style="padding:0.25rem 0.5rem;font-size:0.75rem;">
+                    Delete
+                </button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function updateSelectDropdowns() {
+    const algoDropdowns = ['trade-algo', 'filter-algo'];
+    
+    algoDropdowns.forEach(id => {
+        const dropdown = document.getElementById(id);
+        if (!dropdown) return;
+        
+        // Preserve selection if possible
+        const prevSelected = dropdown.value;
+        
+        // Clear options (leave 'all' option for filtering)
+        dropdown.innerHTML = id === 'filter-algo' ? '<option value="all">All Algorithms</option>' : '';
+        
+        state.choices.forEach(algo => {
+            const opt = document.createElement('option');
+            opt.value = algo;
+            opt.textContent = algo;
+            dropdown.appendChild(opt);
+        });
+
+        // Restore selection
+        if (prevSelected) {
+            dropdown.value = prevSelected;
+        }
+    });
+}
+
+function updateSettingsList() {
+    const container = document.getElementById('settings-algo-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    if (state.choices.length === 0) {
+        container.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem;">No active algorithms. Add some below.</div>`;
+        return;
+    }
+
+    state.choices.forEach(algo => {
+        const item = document.createElement('div');
+        item.className = 'settings-item';
+        
+        // Count trades logged for this algo
+        const count = state.trades.filter(t => t.algo === algo).length;
+
+        item.innerHTML = `
+            <div class="settings-item-info">
+                <span style="font-weight:500;">${algo}</span>
+                <span style="font-size:0.75rem;color:var(--text-muted);">(${count} trades)</span>
+            </div>
+            <button class="btn btn-secondary btn-sm btn-danger" onclick="deleteAlgorithm('${algo}')">Remove</button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+function syncFormsFromState() {
+    // Sync criteria forms
+    document.getElementById('settings-benchmark-type').value = state.criteria.benchmarkType;
+    document.getElementById('settings-tolerance').value = state.criteria.tolerance;
+    
+    // Sync criteria labels and formulas on dashboard
+    const type = state.criteria.benchmarkType;
+    const tol = state.criteria.tolerance;
+    
+    let label = 'Opening Price';
+    if (type === 'arrival') label = 'Arrival Price';
+    if (type === 'vwap') label = 'VWAP';
+    if (type === 'custom') label = 'Custom Benchmark';
+    
+    document.getElementById('trade-benchmark-label').textContent = `${label} ($)`;
+    document.getElementById('current-criteria-info').textContent = 
+        `Criteria: Buy Fill <= Benchmark + $${parseFloat(tol).toFixed(2)} | Sell Fill >= Benchmark - $${parseFloat(tol).toFixed(2)}`;
+}
+
+// Global action handles
+window.deleteTrade = function(id) {
+    if (confirm("Are you sure you want to delete this trade?")) {
+        state.trades = state.trades.filter(t => t.id !== id);
+        saveToLocalStorage();
+        initApp();
+    }
+};
+
+window.deleteAlgorithm = function(algoName) {
+    const count = state.trades.filter(t => t.algo === algoName).length;
+    let confirmMsg = `Are you sure you want to remove "${algoName}"?`;
+    if (count > 0) {
+        confirmMsg = `WARNING: There are ${count} trades associated with "${algoName}". If you remove this algorithm, its historical records will still remain in log but it won't be selectable or recommended. Confirm removal?`;
+    }
+    
+    if (confirm(confirmMsg)) {
+        state.choices = state.choices.filter(c => c !== algoName);
+        saveToLocalStorage();
+        initApp();
+    }
+};
+
+window.clearDemoTrades = function() {
+    if (confirm("Are you ready to start logging real trades? This will clear all 60 demo trades from your log, but will keep your custom algorithm choices and settings. Continue?")) {
+        state.trades = state.trades.filter(t => !t.id.startsWith('demo_'));
+        saveToLocalStorage();
+        initApp();
+    }
+};
+
+// --- CORE APP LIFECYCLE ---
+
+function initApp() {
+    const start = performance.now();
+    
+    // 0. Dynamic Demo Banner Rendering
+    const hasDemoTrades = state.trades.some(t => t.id && t.id.startsWith('demo_'));
+    const bannerContainer = document.getElementById('demo-banner-placeholder');
+    if (bannerContainer) {
+        if (hasDemoTrades) {
+            bannerContainer.innerHTML = `
+                <div class="banner banner-warning" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; width: 100%; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1); border-left: 4px solid var(--warning);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.25rem; line-height: 1;">⚠️</span>
+                        <span style="font-size: 0.85rem; color: var(--text-primary);">
+                            You are currently previewing the app with <strong>Demo Data</strong>. Explore the charts, then click to clear the demo log and start your real trades.
+                        </span>
+                    </div>
+                    <button class="btn btn-sm" onclick="clearDemoTrades()" style="background: var(--warning); color: #080b11; border: none; font-weight: 700; white-space: nowrap; transition: all 0.2s ease; cursor: pointer; padding: 0.4rem 0.8rem; border-radius: 8px;">
+                        ✨ Clear Demo & Start Real Trades
+                    </button>
+                </div>
+            `;
+        } else {
+            bannerContainer.innerHTML = '';
+        }
+    }
+
+    // 1. Calculate stats and probabilities
+    const stats = calculateAlgoStats();
+    
+    // 2. Refresh Form Dropdowns
+    updateSelectDropdowns();
+
+    // 3. Update Recommendation Card and main stats
+    updateDashboardStats(stats);
+    
+    // 4. Draw Charts
+    drawCredibleIntervalsChart(stats);
+    drawProbabilityBestChart(stats);
+    drawSuccessRateOverTimeChart();
+
+    // 5. Render History Tables
+    renderTradesTable();
+
+    // 6. Update Settings Lists and Inputs
+    updateSettingsList();
+    syncFormsFromState();
+    
+    // 7. Update Raw copy-paste window
+    document.getElementById('raw-json-data').value = JSON.stringify(state, null, 2);
+    
+    const end = performance.now();
+    console.log(`[Bandit Optimizer] UI and Stats initialized in ${(end - start).toFixed(2)}ms`);
+}
+
+// DOM Ready Hooks
+document.addEventListener('DOMContentLoaded', () => {
+    // Load local storage
+    loadFromLocalStorage();
+
+    // Setup tabs
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabButtons.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            btn.classList.add('active');
+            const tabId = btn.getAttribute('data-tab');
+            document.getElementById(tabId).classList.add('active');
+            
+            // Re-render chart on tab select to guarantee layouts
+            if (tabId === 'tab-dashboard') {
+                const stats = calculateAlgoStats();
+                drawCredibleIntervalsChart(stats);
+                drawProbabilityBestChart(stats);
+                drawSuccessRateOverTimeChart();
+            }
+        });
+    });
+
+    // live update success outcome preview in Trade Log Form
+    const liveInputs = ['trade-side', 'trade-fill', 'trade-benchmark'];
+    liveInputs.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                const side = document.getElementById('trade-side').value;
+                const fill = parseFloat(document.getElementById('trade-fill').value);
+                const bench = parseFloat(document.getElementById('trade-benchmark').value);
+                const previewNode = document.getElementById('live-preview-status');
+                
+                if (isNaN(fill) || isNaN(bench)) {
+                    previewNode.textContent = 'Pending Pricing Input';
+                    previewNode.className = 'preview-status';
+                    return;
+                }
+                
+                const isSuccess = evaluateSuccess(side, fill, bench, state.criteria.tolerance);
+                const slippage = calculateSlippage(side, fill, bench);
+                
+                if (isSuccess) {
+                    previewNode.innerHTML = `<span class="badge badge-success" style="font-size:0.85rem">Success</span> (Slippage: $${slippage.toFixed(2)})`;
+                } else {
+                    previewNode.innerHTML = `<span class="badge badge-danger" style="font-size:0.85rem">Failure</span> (Slippage: +$${slippage.toFixed(2)})`;
+                }
+            });
+        }
+    });
+
+    // Form Submissions
+    const logTradeForm = document.getElementById('log-trade-form');
+    if (logTradeForm) {
+        logTradeForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const ticker = document.getElementById('trade-ticker').value.toUpperCase().trim();
+            const side = document.getElementById('trade-side').value;
+            const qty = parseInt(document.getElementById('trade-qty').value) || 100;
+            const algo = document.getElementById('trade-algo').value;
+            const benchmarkPrice = parseFloat(document.getElementById('trade-benchmark').value);
+            const fillPrice = parseFloat(document.getElementById('trade-fill').value);
+            
+            if (!ticker) {
+                alert("Please enter a valid ticker.");
+                return;
+            }
+            if (isNaN(benchmarkPrice) || isNaN(fillPrice)) {
+                alert("Please enter valid numeric benchmark and fill prices.");
+                return;
+            }
+
+            const success = evaluateSuccess(side, fillPrice, benchmarkPrice, state.criteria.tolerance);
+
+            const newTrade = {
+                id: 'trade_' + Math.random().toString(36).substr(2, 9),
+                timestamp: new Date().toISOString(),
+                ticker,
+                side,
+                qty,
+                algo,
+                benchmarkPrice,
+                fillPrice,
+                success
+            };
+
+            state.trades.push(newTrade);
+            saveToLocalStorage();
+            initApp();
+            
+            // Clean fields (keep side, ticker and algo prefilled for convenience)
+            document.getElementById('trade-benchmark').value = '';
+            document.getElementById('trade-fill').value = '';
+            document.getElementById('live-preview-status').textContent = 'Pending Pricing Input';
+        });
+    }
+
+    // Add Algorithm Form
+    const addAlgoForm = document.getElementById('add-algo-form');
+    if (addAlgoForm) {
+        addAlgoForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const input = document.getElementById('new-algo-name');
+            const name = input.value.trim();
+            
+            if (!name) return;
+            
+            if (state.choices.includes(name)) {
+                alert("Algorithm name already exists.");
+                return;
+            }
+            
+            state.choices.push(name);
+            input.value = '';
+            saveToLocalStorage();
+            initApp();
+        });
+    }
+
+    // Save Criteria Form
+    const criteriaForm = document.getElementById('criteria-settings-form');
+    if (criteriaForm) {
+        criteriaForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const benchmarkType = document.getElementById('settings-benchmark-type').value;
+            const tolerance = parseFloat(document.getElementById('settings-tolerance').value) || 0.0;
+            
+            state.criteria.benchmarkType = benchmarkType;
+            state.criteria.tolerance = tolerance;
+            
+            saveToLocalStorage();
+            
+            // Propose recalculating historical trades
+            if (confirm("Success criteria updated. Do you want to recalculate historical trades success flags using these new parameters?")) {
+                recalculateAllTrades();
+            } else {
+                initApp();
+            }
+        });
+    }
+
+    // Search and Filters for Trades list
+    const filterIds = ['filter-algo', 'filter-side', 'filter-result'];
+    filterIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('change', (e) => {
+                state.filters[id.split('-')[1]] = e.target.value;
+                state.pagination.currentPage = 1; // Reset to page 1
+                renderTradesTable();
+            });
+        }
+    });
+
+    const searchTicker = document.getElementById('filter-ticker');
+    if (searchTicker) {
+        searchTicker.addEventListener('input', (e) => {
+            state.filters.ticker = e.target.value.trim().toUpperCase();
+            state.pagination.currentPage = 1;
+            renderTradesTable();
+        });
+    }
+
+    // Pagination Click events
+    const prevBtn = document.getElementById('prev-page-btn');
+    if (prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (state.pagination.currentPage > 1) {
+                state.pagination.currentPage--;
+                renderTradesTable();
+            }
+        });
+    }
+
+    const nextBtn = document.getElementById('next-page-btn');
+    if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            const totalCount = state.trades.length; // rough max, filters apply in renderTradesTable
+            const totalPages = Math.ceil(totalCount / state.pagination.pageSize) || 1;
+            if (state.pagination.currentPage < totalPages) {
+                state.pagination.currentPage++;
+                renderTradesTable();
+            }
+        });
+    }
+
+    // CSV File Upload Action
+    const csvFileInput = document.getElementById('csv-file-input');
+    if (csvFileInput) {
+        csvFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const text = event.target.result;
+                const mode = confirm("Do you want to REPLACE all existing data with this CSV? Select 'Cancel' to MERGE instead.") ? 'replace' : 'merge';
+                importFromCSV(text, mode);
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    // Bind other utility actions
+    document.getElementById('export-csv-btn').addEventListener('click', exportToCSV);
+    document.getElementById('demo-data-btn').addEventListener('click', () => {
+        if (confirm("This will overwrite your current settings and load historical demo data to preview the app. Proceed?")) {
+            loadDemoData();
+        }
+    });
+
+    document.getElementById('reset-data-btn').addEventListener('click', () => {
+        if (confirm("DANGER: Are you sure you want to wipe out all logged trades? This cannot be undone!")) {
+            safeStorage.clear();
+            loadFromLocalStorage();
+            initApp();
+            alert("Database cleared successfully.");
+        }
+    });
+
+    // Core Initialization call
+    initApp();
+});
+
+</script>
+</body>
+</html>
