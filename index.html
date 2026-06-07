@@ -1882,6 +1882,18 @@ function drawCredibleIntervalsChart(stats) {
         return;
     }
 
+    // Identify if demo data is currently being used
+    const hasDemoTrades = state.trades.some(t => t.id && t.id.startsWith('demo_'));
+    
+    // Core ground-truth probabilities configured in loadDemoData()
+    const trueRates = {
+        'Adaptive Limit': 75,
+        'VWAP': 65,
+        'Arrival Price': 55,
+        'TWAP': 48,
+        'Accumulate/Distribute': 40
+    };
+
     const currentRecName = state.currentRecommendation ? state.currentRecommendation.name : '';
 
     activeAlgos.forEach(algo => {
@@ -1898,12 +1910,18 @@ function drawCredibleIntervalsChart(stats) {
         
         const algoNameSpan = document.createElement('span');
         algoNameSpan.style.fontWeight = isRec ? '600' : '400';
-        algoNameSpan.innerHTML = `${algo.name} ${isRec ? '<span style="color:var(--success-light);font-size:0.75rem;margin-left:4px;">(Rec)</span>' : ''}`;
+        
+        let labelHtml = `${algo.name}`;
+        if (isRec) labelHtml += ' <span style="color:var(--success-light);font-size:0.75rem;margin-left:4px;">(Rec)</span>';
+        if (hasDemoTrades && trueRates[algo.name] !== undefined) {
+            labelHtml += ` <span style="color:#f59e0b;font-size:0.75rem;margin-left:6px;font-weight:600;">(True: ${trueRates[algo.name]}%)</span>`;
+        }
+        algoNameSpan.innerHTML = labelHtml;
         
         const statsSpan = document.createElement('span');
         statsSpan.style.fontFamily = 'monospace';
         statsSpan.style.color = isRec ? 'var(--text-primary)' : 'var(--text-secondary)';
-        statsSpan.textContent = `${algo.successes}/${algo.trades} | ${meanPercent}% [${lowPercent}%-${highPercent}%]`;
+        statsSpan.textContent = `${algo.successes}/${algo.trades} | Est: ${meanPercent}% [${lowPercent}%-${highPercent}%]`;
         
         label.appendChild(algoNameSpan);
         label.appendChild(statsSpan);
@@ -1911,6 +1929,21 @@ function drawCredibleIntervalsChart(stats) {
         const track = document.createElement('div');
         track.className = 'ci-bar-track';
         
+        // Add a vertical visual line for the True Probability inside the track
+        if (hasDemoTrades && trueRates[algo.name] !== undefined) {
+            const trueLine = document.createElement('div');
+            trueLine.style.position = 'absolute';
+            trueLine.style.top = '-2px';
+            trueLine.style.bottom = '-2px';
+            trueLine.style.left = `${trueRates[algo.name]}%`;
+            trueLine.style.width = '2px';
+            trueLine.style.backgroundColor = '#f59e0b';
+            trueLine.style.zIndex = '5';
+            trueLine.style.boxShadow = '0 0 4px #f59e0b';
+            trueLine.title = `True Underlying Probability: ${trueRates[algo.name]}%`;
+            track.appendChild(trueLine);
+        }
+
         const interval = document.createElement('div');
         interval.className = 'ci-bar-interval';
         interval.style.left = `${algo.ciLow * 100}%`;
@@ -1919,7 +1952,8 @@ function drawCredibleIntervalsChart(stats) {
         const meanNode = document.createElement('div');
         meanNode.className = 'ci-bar-mean';
         meanNode.style.left = `${algo.mean * 100}%`;
-        meanNode.title = `Expected: ${meanPercent}%`;
+        meanNode.style.zIndex = '6';
+        meanNode.title = `Expected Estimate: ${meanPercent}%`;
         
         track.appendChild(interval);
         track.appendChild(meanNode);
@@ -1930,7 +1964,6 @@ function drawCredibleIntervalsChart(stats) {
         container.appendChild(row);
     });
 }
-
 function drawProbabilityBestChart(stats) {
     const container = document.getElementById('prob-chart-container');
     if (!container) return;
