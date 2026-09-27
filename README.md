@@ -16,4 +16,4 @@ This tool was designed as a lightweight proof-of-concept for the Portfolio123 co
 * **Permissions:** You are explicitly encouraged to **Fork** this repository, clone the code, alter the calculations, or host your own modified version. 
 
 ### ⚖️ License (MIT)
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, provided that the software is used AT YOUR OWN RISK. THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+Released under the [MIT License](LICENSE). Use it **at your own risk**: the software is provided "as is", without warranty of any kind, and nothing here is trading or investment advice.
